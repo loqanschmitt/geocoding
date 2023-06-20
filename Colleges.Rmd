@@ -1,0 +1,245 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-06-16"
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+Colleges = read_csv("colleges.csv")
+head(Colleges, 1)
+```
+
+```{r}
+names(Colleges)[names(Colleges) == "College Name"] <- "College"
+names(Colleges)[names(Colleges) == "Enrollment Numbers"] <- "Enrollment"
+```
+
+```{r}
+Top30 = Colleges[1:32,] #Subsetting the Top 30 Colleges in The U.S.
+#Renaming the variable College Name
+names(Top30)[names(Top30) == "College Name"] <- "College"
+Top30
+```
+
+```{r}
+#installing packages
+library(RJSONIO)
+library(usmap)
+library(ggplot2)
+library(sf)
+library(rgdal)
+```
+
+```{r}
+library(ggmap)
+library(devtools)
+library(RJSONIO)
+```
+
+```{r}
+Sys.getenv('KEY')
+```
+
+```{r}
+#Installing API
+register_google(key = Sys.getenv('KEY'))
+```
+
+
+```{r}
+Top30_ggmap = geocode(location = Top30$College, output = "more", source = "google") #Obtaining lon and lat.
+Top30_ggmap <- cbind(Top30, Top30_ggmap) #Now combining it to the original data set.
+head(Top30_ggmap)
+```
+
+```{r}
+Colleges_transformed <- usmap_transform(Top30_ggmap) #Not quite sure what this does.
+
+plot_usmap() +
+  geom_point(data = Colleges_transformed, aes(x = x, y = y),
+             color = "red", alpha = 0.99) +
+  labs(title = "Top 30 Colleges in the United States",
+       subtitle = "Ranked by U.S. World News")
+```
+
+```{r}
+library(maps)
+map(database="usa")
+
+text(x=Top30_ggmap$lon, 
+     y=Top30_ggmap$lat,
+     col = "Red")
+```
+
+```{r}
+Colleges_transformed <- usmap_transform(Top30_ggmap) #Not quite sure what this does
+
+plot_usmap(fill = "yellow", alpha = 0.25) +
+  ggrepel::geom_label_repel(data = Colleges_transformed,
+             aes(x = x, y = y, label = College),
+             size = 2, 
+             alpha = 0.8,
+             label.r = unit(0.1, "lines"), 
+             label.size = 0.1,
+             segment.color = "red", #Color of the connecting lines
+             segment.size = 0.5, #Size of the connecting lines
+             direction = "both",
+             max.overlaps = 30,
+             seed = 1002) +
+   geom_point(data = Colleges_transformed,
+             aes(x = x, y = y),
+             size = 1,
+             color = "purple", alpha = 0.9) +
+  labs(title = "Top 30 Colleges in the United States",
+       subtitle = "Source: U.S. News & World Report")
+```
+
+```{r}
+NC_ggmap = geocode(location = Colleges$College, output = "more", source = "google") #Obtaining lon and lat.
+NC_ggmap <- cbind(Colleges, NC_ggmap) #Now combining it to the original data set.
+head(NC_ggmap)
+```
+
+```{r}
+NC_ggmap
+```
+
+
+```{r}
+NC_ggmap1 = NC_ggmap %>%
+  filter(grepl('nc,', address))
+```
+
+
+```{r}
+NC_ggmap2 = NC_ggmap %>%
+  filter(grepl('nc ', address))
+NC_ggmap2 = rbind(NC_ggmap2, NC_ggmap1)
+names(NC_ggmap2)[names(NC_ggmap2) == "Enrollment Numbers"] <- "Enrollment"
+NC_ggmap2
+```
+
+```{r}
+usmap::plot_usmap("counties", include = c("NC"), labels = FALSE,
+                  fill="yellow", alpha=0.25, color="orange") 
+```
+
+```{r}
+library(maps)
+map('county', 'north carolina')
+points(x = NC_ggmap2$lon, 
+       y = NC_ggmap2$lat, 
+       col = "Red", 
+       pch =  8)
+```
+
+```{r}
+NC_transformed <- usmap_transform(NC_ggmap2) #Not quite sure what this does.
+
+plot_usmap("counties", include = c("NC")) +
+  geom_point(data = NC_transformed, aes(x = x, y = y),
+             color = "red", alpha = 0.99) +
+  labs(title = "North Carolina Colleges",
+       subtitle = "By Enrollment Size")
+```
+
+```{r}
+NC_transformed <- usmap_transform(NC_ggmap2)
+
+plot_usmap("counties", include = c("NC"), fill = "grey", alpha = 0.25) +
+  ggrepel::geom_label_repel(data = NC_transformed,
+             aes(x = x, y = y, label = College),
+             size = 3, alpha = 0.8,
+             label.r = unit(0.5, "lines"), label.size = 0.3,
+             segment.color = "red", segment.size = 0.8,
+             seed = 1002,
+             max.overlaps = 30) +
+  geom_point(data = NC_transformed,
+             aes(x = x, y = y, size = Enrollment),
+             color = "orange", alpha = 0.5) +
+  scale_size_continuous(range = c(2, 10),
+                        label = scales::comma) +
+  labs(title = "Highest Ranked Colleges in North Carolina",
+       subtitle = "Source: U.S. News & World Report (2022)",
+       size = "Enrollment Numbers") +
+  theme(legend.position = "right")
+```
+
+
+```{r}
+library(leaflet)
+leaflet() %>% 
+ addTiles() %>% 
+ addMarkers(lng = -79.0558, lat = 35.9132, 
+            popup = "Chapel Hill")
+```
+
+```{r}
+df2 = structure(
+  list(
+    Lat = c(
+      36.0014, 35.9049, 35.7851),
+    Lon = c(
+      -78.9382, -79.0469, -78.6813),
+    Place = c("Duke University", 
+              "University of North Carolina at Chapel Hill",
+              "North Carolina State University")
+  )
+)
+df2
+```
+
+```{r}
+leaflet(df2) %>% 
+  addTiles() %>%
+  addCircleMarkers(lng = ~Lon, 
+                   lat = ~Lat, 
+                   popup = ~Place)
+```
+
+
+
+```{r}
+df = structure(
+  list(
+    Lat = c(
+      28.4186, 28.3574, 28.3765, 28.3581, 28.4724, 28.4718, 28.43787),
+    Lon = c(
+      -81.5812, -81.5906, -81.5494, -81.5591, -81.4690, -81.4709, -81.44452),
+    Place = c("Magic Kingdom", 
+              "Animal Kingdom", 
+              "EPCOT", 
+              "Hollywood Studios",
+              "Universal Studios",
+              "Islands of Adventure",
+              "Epic Universe")
+  )
+)
+df
+```
+
+```{r}
+leaflet(df) %>% 
+  addTiles() %>%
+  addCircleMarkers(lng = ~Lon, 
+                   lat = ~Lat, 
+                   popup = ~Place)
+```
+
+
+
+
+
+
+
+
+
+
+
