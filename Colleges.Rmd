@@ -7,7 +7,6 @@ date: "2023-06-16"
 ```{r}
 knitr::opts_chunk$set(echo = TRUE)
 library(readr)
-library(dplyr)
 library(ggplot2)
 ```
 
@@ -17,14 +16,13 @@ head(Colleges, 1)
 ```
 
 ```{r}
+#Renaming variable to make them easier to work with
 names(Colleges)[names(Colleges) == "College Name"] <- "College"
 names(Colleges)[names(Colleges) == "Enrollment Numbers"] <- "Enrollment"
 ```
 
 ```{r}
 Top30 = Colleges[1:32,] #Subsetting the Top 30 Colleges in The U.S.
-#Renaming the variable College Name
-names(Top30)[names(Top30) == "College Name"] <- "College"
 Top30
 ```
 
@@ -70,16 +68,7 @@ plot_usmap() +
 ```
 
 ```{r}
-library(maps)
-map(database="usa")
-
-text(x=Top30_ggmap$lon, 
-     y=Top30_ggmap$lat,
-     col = "Red")
-```
-
-```{r}
-Colleges_transformed <- usmap_transform(Top30_ggmap) #Not quite sure what this does
+Colleges_transformed <- usmap_transform(Top30_ggmap)
 
 plot_usmap(fill = "yellow", alpha = 0.25) +
   ggrepel::geom_label_repel(data = Colleges_transformed,
@@ -108,19 +97,12 @@ head(NC_ggmap)
 ```
 
 ```{r}
-NC_ggmap
-```
-
-
-```{r}
+# Filtering to obtain colleges in North Carolina
 NC_ggmap1 = NC_ggmap %>%
   filter(grepl('nc,', address))
-```
-
-
-```{r}
 NC_ggmap2 = NC_ggmap %>%
   filter(grepl('nc ', address))
+# And now combining both subsets
 NC_ggmap2 = rbind(NC_ggmap2, NC_ggmap1)
 names(NC_ggmap2)[names(NC_ggmap2) == "Enrollment Numbers"] <- "Enrollment"
 NC_ggmap2
@@ -132,16 +114,8 @@ usmap::plot_usmap("counties", include = c("NC"), labels = FALSE,
 ```
 
 ```{r}
-library(maps)
-map('county', 'north carolina')
-points(x = NC_ggmap2$lon, 
-       y = NC_ggmap2$lat, 
-       col = "Red", 
-       pch =  8)
-```
-
-```{r}
-NC_transformed <- usmap_transform(NC_ggmap2) #Not quite sure what this does.
+#Attempt 1
+NC_transformed <- usmap_transform(NC_ggmap2)
 
 plot_usmap("counties", include = c("NC")) +
   geom_point(data = NC_transformed, aes(x = x, y = y),
@@ -151,6 +125,7 @@ plot_usmap("counties", include = c("NC")) +
 ```
 
 ```{r}
+#Attempt 2
 NC_transformed <- usmap_transform(NC_ggmap2)
 
 plot_usmap("counties", include = c("NC"), fill = "grey", alpha = 0.25) +
@@ -182,6 +157,8 @@ leaflet() %>%
 ```
 
 ```{r}
+#Mapping the colleges in the triangle 
+
 df2 = structure(
   list(
     Lat = c(
@@ -194,9 +171,7 @@ df2 = structure(
   )
 )
 df2
-```
 
-```{r}
 leaflet(df2) %>% 
   addTiles() %>%
   addCircleMarkers(lng = ~Lon, 
@@ -205,33 +180,6 @@ leaflet(df2) %>%
 ```
 
 
-
-```{r}
-df = structure(
-  list(
-    Lat = c(
-      28.4186, 28.3574, 28.3765, 28.3581, 28.4724, 28.4718, 28.43787),
-    Lon = c(
-      -81.5812, -81.5906, -81.5494, -81.5591, -81.4690, -81.4709, -81.44452),
-    Place = c("Magic Kingdom", 
-              "Animal Kingdom", 
-              "EPCOT", 
-              "Hollywood Studios",
-              "Universal Studios",
-              "Islands of Adventure",
-              "Epic Universe")
-  )
-)
-df
-```
-
-```{r}
-leaflet(df) %>% 
-  addTiles() %>%
-  addCircleMarkers(lng = ~Lon, 
-                   lat = ~Lat, 
-                   popup = ~Place)
-```
 
 
 
